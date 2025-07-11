@@ -6,9 +6,9 @@ import pyperclip
 import requests
 
 # === CONFIGURATION ===
-mc_log_path = r"C:\Users\bschu\curseforge\minecraft\Instances\The Pixelmon Modpack\logs\latest.log"
+mc_log_path = r"YOUR_LOG_HERE"
 cache_file = "pokemon_entries.json"
-webhook_url = "https://discord.com/api/webhooks/1392945425920819335/AXwWf8pJjntgkvNBwa487Iwn6J6oWOibmZVVaCWxBFFt0gghsH8sHbzchYGSP4-BPKKz"
+webhook_url = "YOUR_WEBHOOK_HERE"
 
 pokedex_data_file = "pokedex_data.json"
 caught_pokemon_file = "caught_pokemon.json"
