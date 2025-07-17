@@ -2,15 +2,19 @@
 <html>
 <head>
   <title>Pixelmon Tracker</title>
+  
   <style>
-    body { font-family: sans-serif; background: #f8f8f8; padding: 20px; }
+  
+    body { font-family: Trebuchet MS; background: #f8f8f8; padding: 20px; }
     h1 { color: #555; }
     .grid { display: flex; flex-wrap: wrap; gap: 10px; }
     .card {
 		position: relative;
-      width: 150px;
+      width: 130px;
       border-radius: 10px;
       padding: 30px;
+	  padding-bottom: 10px;
+	  padding-top: 10px;
       background: #fff;
       box-shadow: 0 2px 5px rgba(0,0,0,0.1);
       text-align: center;
@@ -18,10 +22,12 @@
       cursor: pointer;
       user-select: none;
       transition: opacity 0.5s, border-color 0.3s;
+	  transition: background-color 0.4s ease, color 0.4s ease;
+
     }
     .card.caught { border: 2px solid #1caf50; opacity: 1; }
-    img { height: 120px; }
-	
+    img { height: 80px; }
+
 	.card[data-note]:hover::after {
 	  content: attr(data-note);
 	  position: absolute;
@@ -42,43 +48,107 @@
 	  opacity: 1;
 	  visibility: visible;
 	  transition: opacity 0.2s ease-in-out;
+	  transition: background-color 0.6s ease, border-color 0.4s ease, box-shadow 0.4s ease, opacity 0.4s ease;
+
 	}
 
-
-    .card[data-note]:hover::after {
-      opacity: 1;
-      visibility: visible;
-    }
+    .rarity-very-rare { color: #bd2828; font-weight:600; }
+	.rarity-common { color: #a8d5a2; font-weight: 600; }
+	.rarity-uncommon { color: #f2d94e; font-weight: 600; }
+	.rarity-rare { color: #f29539; font-weight: 600; }
+	.rarity-ultra-rare { color: #a065d8; font-weight: 600; }
 	
-	.rarity-very-rare {
-		color: #bd2828;
-		font-weight:600;
-	}
-	.rarity-common {
-	  color: #a8d5a2; /* light green */
-	  font-weight: 600;
-	}
+body.dark {
+  background: #121212;
+  color: #e0e0e0;
+}
 
-	.rarity-uncommon {
-	  color: #f2d94e; /* yellow */
-	  font-weight: 600;
-	}
+body.dark h1, body.dark h2 {
+  color: #ffffff;
+}
 
-	.rarity-rare {
-	  color: #f29539; /* orange */
-	  font-weight: 600;
-	}
+body.dark .card {
+  background: #1e1e1e;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.6);
+  border-color: #333;
+}
 
-	.rarity-ultra-rare {
-	  color: #a065d8; /* purple */
-	  font-weight: 600;
-	}
+body.dark .card.caught {
+  border-color: #4caf50;
+}
+
+body.dark .rarity-common     { color: #7cbf77; }
+body.dark .rarity-uncommon   { color: #f2d94e; }
+body.dark .rarity-rare       { color: #f29539; }
+body.dark .rarity-ultra-rare { color: #a065d8; }
+body.dark .rarity-very-rare  { color: #ff6b6b; }
+
+body.dark select,
+body.dark input[type="text"] {
+  background-color: #2c2c2c;
+  color: #ffffff;
+  border: 1px solid #555;
+}
+
+body.dark .card[data-note]:hover::after {
+  background: rgba(30, 30, 30, 0.95);
+  color: #e0e0e0;
+  border-color: #666;
+}
+body, h1, h2, .card, select, input[type="text"] {
+  transition: background-color 0.4s ease, color 0.3s ease 0.1s, border-color 0.3s ease;
+}
+
 
   </style>
 </head>
 <body>
   <h1>Pixelmon Dex Tracker</h1>
   <p>Caught Pokémon: <span id="caught-count">0</span></p>
+
+
+  <label for="typeFilter">Filter by Type:</label>
+  <select id="typeFilter">
+    <option value="all">All</option>
+    {% for type in all_types %}
+      <option value="{{ type }}">{{ type }}</option>
+    {% endfor %}
+  </select>
+
+  <label for="caughtFilter">Filter by Status:</label>
+  <select id="caughtFilter">
+    <option value="all">All</option>
+    <option value="caught">Caught</option>
+    <option value="uncaught">Uncaught</option>
+  </select>
+
+  <label for="timeFilter">Filter by Time:</label>
+  <select id="timeFilter">
+    <option value="all">All</option>
+    <option value="dawn">Dawn</option>
+    <option value="day">Day</option>
+    <option value="dusk">Dusk</option>
+    <option value="night">Night</option>
+    <option value="morning">Morning</option>
+  </select>
+
+  <label for="biomeFilter">Filter by Biome:</label>
+  <select id="biomeFilter">
+    <option value="all">All</option>
+    {% for biome in all_biomes %}
+      <option value="{{ biome }}">{{ biome }}</option>
+    {% endfor %}
+  </select>
+
+  <label for="nameSearch">Search by Name:</label>
+  <input type="text" id="nameSearch" placeholder="Enter Pokémon name...">
+
+<label style="
+
+	position: absolute;
+	left: 90%;">
+  <input type="checkbox" id="darkModeToggle"> Dark Mode
+</label>
 
   {% for gen, pokemons in generations %}
     <h2>Generation {{ gen }}</h2>
@@ -87,91 +157,148 @@
         <div id="pokemon-{{ entry.name.lower() }}" 
              class="card {% if entry.caught %}caught{% endif %}" 
              onclick="toggleCaught('{{ entry.name }}')"
+             data-types="{{ entry.type1 }}{% if entry.type2 %},{{ entry.type2 }}{% endif %}"
+             data-biome="{{ entry.biome | default('unknown') | lower }}"
+             data-name="{{ entry.name | lower }}"
              {% if entry.note %} data-note="{{ entry.note | e }}"{% endif %}>
-			<div>#{{entry.pokemon_id}}</div>
+
+          <div><span style="color: lightgrey;">#{{entry.pokemon_id}}</span></div>
           <img src="{{ entry.sprite_url }}" alt="{{ entry.name }}">
           <h4>{{ entry.name }}</h4>
-          <div>{{ entry.biome or 'Unknown' }}</div>
-          <div>{{ entry.time or 'Any' }}</div><br>
+          <div class="biome-label">{{ entry.biome or 'Unknown' }}</div>
+          <div class="time-label">{{ entry.time or 'Any' }}</div><br>
           <div class="
-			{% if entry.rarity %}
-			{% if entry.rarity.lower() == 'common' %}rarity-common
-			{% elif entry.rarity.lower() == 'uncommon' %}rarity-uncommon
-			{% elif entry.rarity.lower() == 'rare' %}rarity-rare
-			{% elif entry.rarity.lower() == 'ultra rare' %}rarity-ultra-rare
-			{% elif entry.rarity.lower() == 'very rare' %}rarity-very-rare
-			{% endif %}
-			{% endif %}
-		">
-Rarity:<br>
-  {{ entry.rarity or 'Unknown' }}
-</div>
-
+            {% if entry.rarity %}
+              {% if entry.rarity.lower() == 'common' %}rarity-common
+              {% elif entry.rarity.lower() == 'uncommon' %}rarity-uncommon
+              {% elif entry.rarity.lower() == 'rare' %}rarity-rare
+              {% elif entry.rarity.lower() == 'ultra rare' %}rarity-ultra-rare
+              {% elif entry.rarity.lower() == 'very rare' %}rarity-very-rare
+              {% endif %}
+            {% endif %}
+          ">
+            Rarity:<br>
+            {{ entry.rarity or 'Unknown' }}
+          </div>
           <div>Types:<br> {{ entry.type1 }}{% if entry.type2 %} / {{ entry.type2 }}{% endif %}</div>
-		  <div>Evolves:<br> {{ entry.evolve or 'Unknown' }}</div>
-
+          <div>Evolves:<br> {{ entry.evolve or 'Unknown' }}</div>
         </div>
       {% endfor %}
     </div>
   {% endfor %}
 
+<script>
+  async function fetchData() {
+    try {
+      const response = await fetch('/api/data');
+      const data = await response.json();
 
-  <script>
-    async function fetchData() {
-      try {
-        const response = await fetch('/api/data');
-        const data = await response.json();
+      document.getElementById('caught-count').textContent = data.total;
 
-        document.getElementById('caught-count').textContent = data.total;
-
-        data.pokedex.forEach(pokemon => {
-          const elem = document.getElementById('pokemon-' + pokemon.name.toLowerCase());
-          if (elem) {
-            if (data.caught.includes(pokemon.name)) {
-              elem.classList.add('caught');
-            } else {
-              elem.classList.remove('caught');
-            }
-          }
-        });
-      } catch (e) {
-        console.error('Error fetching data', e);
-      }
-    }
-
-    async function toggleCaught(name) {
-      try {
-        const response = await fetch('/api/toggle_caught', {
-          method: 'POST',
-          headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify({name: name})
-        });
-        if (!response.ok) {
-          console.error("Toggle failed:", await response.text());
-          return;
-        }
-        const data = await response.json();
-
-        const elem = document.getElementById('pokemon-' + data.name.toLowerCase());
+      data.pokedex.forEach(pokemon => {
+        const elem = document.getElementById('pokemon-' + pokemon.name.toLowerCase());
         if (elem) {
-          if (data.caught) {
+          if (data.caught.includes(pokemon.name)) {
             elem.classList.add('caught');
           } else {
             elem.classList.remove('caught');
           }
         }
-
-        // Update caught count
-        // Just refetch total from API to keep accurate
-        fetchData();
-      } catch (e) {
-        console.error('Error toggling caught', e);
-      }
+      });
+    } catch (e) {
+      console.error('Error fetching data', e);
     }
+  }
 
-    // Auto-refresh every 5 seconds
-    setInterval(fetchData, 5000);
-    fetchData();
-  </script>
+  async function toggleCaught(name) {
+    try {
+      const response = await fetch('/api/toggle_caught', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({name: name})
+      });
+      if (!response.ok) {
+        console.error("Toggle failed:", await response.text());
+        return;
+      }
+      const data = await response.json();
+
+      const elem = document.getElementById('pokemon-' + data.name.toLowerCase());
+      if (elem) {
+        if (data.caught) {
+          elem.classList.add('caught');
+        } else {
+          elem.classList.remove('caught');
+        }
+      }
+
+      fetchData();
+    } catch (e) {
+      console.error('Error toggling caught', e);
+    }
+  }
+
+  setInterval(fetchData, 5000);
+  fetchData();
+
+  function applyFilters() {
+    const selectedType = document.getElementById('typeFilter').value.toLowerCase();
+    const selectedTime = document.getElementById('timeFilter').value.toLowerCase();
+    const selectedBiome = document.getElementById('biomeFilter').value.toLowerCase();
+    const nameSearch = document.getElementById('nameSearch').value.toLowerCase().trim();
+    const caughtFilter = document.getElementById('caughtFilter').value;
+
+    const allCards = document.querySelectorAll('.card');
+
+    allCards.forEach(card => {
+      const types = card.getAttribute('data-types').toLowerCase().split(',');
+      const typeMatch = selectedType === 'all' || types.includes(selectedType);
+
+      const isCaught = card.classList.contains('caught');
+      const caughtMatch = caughtFilter === 'all' ||
+                          (caughtFilter === 'caught' && isCaught) ||
+                          (caughtFilter === 'uncaught' && !isCaught);
+
+      const timeElem = card.querySelector('.time-label');
+      const timeValue = timeElem ? timeElem.textContent.trim().toLowerCase() : 'any';
+      const timeParts = timeValue.split(',').map(t => t.trim());
+      const timeMatch = selectedTime === 'all' || timeParts.includes(selectedTime);
+
+      const biomeValue = (card.getAttribute('data-biome') || 'unknown').toLowerCase();
+      const biomeMatch = selectedBiome === 'all' || biomeValue.includes(selectedBiome);
+
+      const nameValue = card.getAttribute('data-name');
+      const nameMatch = nameSearch === '' || nameValue.includes(nameSearch);
+
+      card.style.display = (typeMatch && caughtMatch && timeMatch && biomeMatch && nameMatch) ? '' : 'none';
+    });
+  }
+
+  document.getElementById('typeFilter').addEventListener('change', applyFilters);
+  document.getElementById('caughtFilter').addEventListener('change', applyFilters);
+  document.getElementById('timeFilter').addEventListener('change', applyFilters);
+  document.getElementById('biomeFilter').addEventListener('change', applyFilters);
+  document.getElementById('nameSearch').addEventListener('input', applyFilters);
+
+  const toggle = document.getElementById('darkModeToggle');
+
+  // Load saved preference
+  if (localStorage.getItem('darkMode') === 'true') {
+    document.body.classList.add('dark');
+    toggle.checked = true;
+  }
+
+  toggle.addEventListener('change', () => {
+    if (toggle.checked) {
+      document.body.classList.add('dark');
+      localStorage.setItem('darkMode', 'true');
+    } else {
+      document.body.classList.remove('dark');
+      localStorage.setItem('darkMode', 'false');
+    }
+  });
+
+
+</script>
 </body>
 </html>
