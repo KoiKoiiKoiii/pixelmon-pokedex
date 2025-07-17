@@ -64,23 +64,35 @@ def get_generation(pokemon_id):
         return "8"
     else:
         return "9"
+        
+all_biomes = set()
 
+@app.route("/")
 @app.route("/")
 def index():
     caught = load_caught()
     gen_groups = defaultdict(list)
+    all_types = set()
+
     for entry in pokedex:
         entry_copy = entry.copy()
-        
         entry_copy["caught"] = entry["name"] in caught
         entry_copy["sprite_url"] = format_sprite_name(entry["name"])
-        # Assume 'id' or 'number' field in pokedex contains National Dex number
         poke_id = entry.get("pokemon_id") or entry.get("number") or 0
         gen = get_generation(int(poke_id))
         gen_groups[gen].append(entry_copy)
+        if entry.get("biome"):
+            parts = [b.strip() for b in entry["biome"].split("/")]
+            all_biomes.update(parts)
+
+
+        for t in (entry.get("type1"), entry.get("type2")):
+            if t:
+                all_types.add(t)
 
     sorted_gens = sorted(gen_groups.items(), key=lambda x: int(x[0]))
-    return render_template("index.html", generations=sorted_gens)
+    return render_template("index.html", generations=sorted_gens, all_types=sorted(all_types), all_biomes=sorted(all_biomes))
+
 
 
 @app.route("/api/data")
